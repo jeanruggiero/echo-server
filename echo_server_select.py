@@ -1,7 +1,6 @@
 import socket
 import sys
 import traceback
-import select
 
 
 def server(log_buffer=sys.stderr):
@@ -26,31 +25,20 @@ def server(log_buffer=sys.stderr):
     sock.bind(address)
     sock.listen(1)
 
-    conn_list = []
-
     try:
         # the outer loop controls the creation of new connection sockets. The
         # server will handle each incoming connection one at a time.
-        print('waiting for a connection', file=log_buffer)
         while True:
+            print('waiting for a connection', file=log_buffer)
 
             # TODO: make a new socket when a client connects, call it 'conn',
             #       at the same time you should be able to get the address of
             #       the client so we can report it below.  Replace the
             #       following line with your code. It is only here to prevent
             #       syntax errors
+            
             conn, addr = sock.accept()
-            conn.setblocking(0)
-            conn_list.append(conn)
-            print('Connection accepted')
-            ready_conn, _, _ = select.select(conn_list, [], [], 0)
-
-            if not ready_conn:
-                continue
-            print('A connection is ready for reading!')
-
             try:
-                current_conn = ready_conn.pop(0)
                 print('connection - {0}:{1}'.format(*addr), file=log_buffer)
 
                 # the inner loop will receive messages sent by the client in
@@ -62,13 +50,13 @@ def server(log_buffer=sys.stderr):
                     #       following line with your code.  It's only here as
                     #       a placeholder to prevent an error in string
                     #       formatting
-                    data = current_conn.recv(16)
+                    data = conn.recv(16)
                     print('received "{0}"'.format(data.decode('utf8')))
                     
                     # TODO: Send the data you received back to the client, log
                     #       the fact using the print statement here.  It will help in
                     #       debugging problems.
-                    current_conn.sendall(data)
+                    conn.sendall(data)
                     print('sent "{0}"'.format(data.decode('utf8')))
                     
                     # TODO: Check here to see whether you have received the end
@@ -90,7 +78,7 @@ def server(log_buffer=sys.stderr):
                 # TODO: When the inner loop exits, this 'finally' clause will
                 #       be hit. Use that opportunity to close the socket you
                 #       created above when a client connected.
-                current_conn.close()
+                conn.close()
                 print(
                     'echo complete, client connection closed', file=log_buffer
                 )
